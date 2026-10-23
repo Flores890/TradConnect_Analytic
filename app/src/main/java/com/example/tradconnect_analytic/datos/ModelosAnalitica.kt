@@ -1,16 +1,21 @@
 package com.example.tradconnect_analytic.datos
+// Punto individual para el gráfico de línea / tendencia histórica
+data class PuntoVenta(
+    val etiquetaFecha: String, // Ej: "25 sept", "22 oct"
+    val cantidad: Int
+)
 
-// Representa un registro de venta comparativo
-data class VentaPeriodo(
-    val id: String,
-    val etiquetaPeriodo: String, // Ej: "Sem 1", "Ene", "2024"
-    val ventasActuales: Int,
-    val ventasAnterior: Int
+// Estructura para la tarjeta comparativa con su historial de puntos
+data class DatosPeriodoVentas(
+    val titulo: String,            // Ej: "Ventas por Semana", "Ventas por Mes"
+    val ventasTotalPeriodo: Int,  // Valor en grande (ej: 460)
+    val estadoComparativo: String, // Ej: "Casi igual a lo habitual", "+15% vs anterior"
+    val puntosHistorial: List<PuntoVenta> // Registros para dibujar el gráfico (10 a 20 puntos)
 )
 
 // Datos generales del proveedor y KPIs
 data class DatosProveedor(
-    val totalVentasHistorico: Double,
+    val totalVentasHistoricoCount: Int,
     val pedidosActivos: Int,
     val clientesActivos: Int,
     val calificacionPromedio: Double,
