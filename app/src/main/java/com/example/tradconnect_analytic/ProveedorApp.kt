@@ -11,9 +11,9 @@ import com.example.tradconnect_analytic.pantallas.*
 
 @Composable
 fun ProveedorApp() {
-    var pantallaActual by remember { mutableIntStateOf(0) }
+    var pantallaActual by remember { mutableIntStateOf(1) } // Inicia en Evaluaciones para probar
 
-    // 1. Historial de puntos para el gráfico interactivo según cada período (Semana, Mes, Año)
+    // 1. Puntos de historial para los gráficos de ventas
     val historialSemana = listOf(
         PuntoVenta("Lun", 15), PuntoVenta("Mar", 22), PuntoVenta("Mié", 18),
         PuntoVenta("Jue", 30), PuntoVenta("Vie", 25), PuntoVenta("Sáb", 45),
@@ -55,11 +55,14 @@ fun ProveedorApp() {
         puntosHistorial = historialAnio
     )
 
-    // 2. Datos simulados de Evaluaciones
+    // 2. Lista completa de Evaluaciones de Clientes
     val evaluacionesMock = listOf(
-        EvaluacionCliente("1", "Carlos Mendoza", 5.0, "Excelente servicio y entrega rápida.", "2026-10-20"),
-        EvaluacionCliente("2", "Ana Sofía Ruiz", 4.0, "Buen producto, aunque demoró un día más.", "2026-10-18"),
-        EvaluacionCliente("3", "Luis Fernando", 5.0, "Muy satisfecho con la atención prestada.", "2026-10-15")
+        EvaluacionCliente("1", "Carlos Mendoza", 5.0, "Excelente servicio y entrega rápida. Muy recomendado.", "2026-10-20"),
+        EvaluacionCliente("2", "Ana Sofía Ruiz", 4.0, "Buen producto, aunque demoró un día más de lo estipulado.", "2026-10-18"),
+        EvaluacionCliente("3", "Luis Fernando", 5.0, "Muy satisfecho con la atención prestada por el soporte.", "2026-10-15"),
+        EvaluacionCliente("4", "Valeria Gómez", 4.5, "Los empaques llegaron en muy buen estado.", "2026-10-12"),
+        EvaluacionCliente("5", "Jorge Martínez", 4.0, "Cumplió con todas las especificaciones solicitadas.", "2026-10-10"),
+        EvaluacionCliente("6", "Lucía Hernández", 5.0, "Súper rápido y confiable. Volveré a realizar pedidos.", "2026-10-08")
     )
 
     // 3. Datos simulados de Incidencias
@@ -81,10 +84,11 @@ fun ProveedorApp() {
     )
 
     Scaffold(
+        // Encabezado cambiado únicamente a "Panel de Analítica"
         topBar = {
             Surface(color = MaterialTheme.colorScheme.primary) {
                 Text(
-                    text = "Panel de Analítica - Proveedor",
+                    text = "Panel de Analítica",
                     color = MaterialTheme.colorScheme.onPrimary,
                     style = MaterialTheme.typography.titleLarge,
                     modifier = Modifier
