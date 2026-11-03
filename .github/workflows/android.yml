@@ -1,0 +1,32 @@
+name: Compilar APK en Azure
+
+on:
+  push:
+    branches: [ "main" ] # Se activa solo cuando subes cambios a la rama main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest # Usa las computadoras virtuales de Azure
+
+    steps:
+      - name: Descargar codigo desde GitHub
+        uses: actions/checkout@v4
+
+      - name: Configurar Entorno de Java (JDK 17)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Dar permisos al compilador de Android
+        run: chmod +x ./gradlew
+
+      - name: Construir la APK de la aplicacion
+        run: ./gradlew assembleDebug
+
+      - name: Guardar APK como resultado descargable
+        uses: actions/upload-artifact@v4
+        with:
+          name: MiTienda-APK
+          path: app/build/outputs/apk/debug/app-debug.apk
