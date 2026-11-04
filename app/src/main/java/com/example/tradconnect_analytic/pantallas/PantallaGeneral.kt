@@ -32,10 +32,8 @@ fun PantallaGeneral(
     datosMes: DatosPeriodoVentas,
     datosAnio: DatosPeriodoVentas
 ) {
-    // Estado para controlar el filtro temporal seleccionado (Semana, Mes, Año)
     var filtroTemporal by remember { mutableStateOf("Mes") }
 
-    // Seleccionar dinámicamente los datos según el botón presionado
     val datosActuales = when (filtroTemporal) {
         "Semana" -> datosSemana
         "Mes" -> datosMes
@@ -48,7 +46,6 @@ fun PantallaGeneral(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // 1. Total histórico de ventas (Texto superior menos llamativo)
         item {
             Text(
                 text = "Total Histórico de Ventas: $totalVentasHistoricoCount transacciones",
@@ -57,7 +54,6 @@ fun PantallaGeneral(
             )
         }
 
-        // 2. Botones de Selector de Período (Semana, Mes, Año)
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -79,7 +75,6 @@ fun PantallaGeneral(
             }
         }
 
-        // 3. Tarjeta KPI Principal: Cantidad de ventas por período (Números grandes)
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -106,7 +101,6 @@ fun PantallaGeneral(
             }
         }
 
-        // 4. Gráfico de Tendencia Interactivo con diseño armónico
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -134,7 +128,6 @@ fun PantallaGeneral(
                             fontWeight = FontWeight.Bold
                         )
                         Spacer(modifier = Modifier.width(8.dp))
-                        // Círculo de check verde
                         Box(
                             modifier = Modifier
                                 .size(20.dp)
@@ -145,7 +138,6 @@ fun PantallaGeneral(
                         }
                     }
 
-                    // Estado comparativo
                     Text(
                         text = datosActuales.estadoComparativo,
                         color = MaterialTheme.colorScheme.outline,
@@ -154,13 +146,11 @@ fun PantallaGeneral(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Gráfico Interactivo con Canvas y Detección de Toques
                     GraficoLineaInteractivoCanvas(puntos = datosActuales.puntosHistorial)
                 }
             }
         }
 
-        // 5. Indicadores Secundarios: Pedidos Activos y Clientes Activos
         item {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -214,15 +204,11 @@ fun PantallaGeneral(
 fun GraficoLineaInteractivoCanvas(puntos: List<PuntoVenta>) {
     if (puntos.isEmpty()) return
 
-    // Estado para guardar el índice del punto que el usuario toque en la gráfica
     var puntoSeleccionadoIndex by remember(puntos) { mutableStateOf<Int?>(null) }
-    val maxValor = (puntos.maxOfOrNull { it.cantidad } ?: 100).coerceAtLeast(1)
-
-    // Obtenemos el color primario actual del tema para la línea del gráfico
+    val maxValor = (puntos.maxOfOrNull { it.valor } ?: 100).coerceAtLeast(1)
     val colorPrimario = MaterialTheme.colorScheme.primary
 
     Column {
-        // Cuadro de información flotante que muestra la fecha y cantidad al tocar un punto
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -236,7 +222,7 @@ fun GraficoLineaInteractivoCanvas(puntos: List<PuntoVenta>) {
                     shape = RoundedCornerShape(8.dp)
                 ) {
                     Text(
-                        text = "${p.etiquetaFecha}  | Ventas: ${p.cantidad}",
+                        text = "${p.etiqueta}  | Ventas: ${p.valor}",
                         color = MaterialTheme.colorScheme.inverseOnSurface,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
@@ -254,7 +240,6 @@ fun GraficoLineaInteractivoCanvas(puntos: List<PuntoVenta>) {
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        // Zona del Canvas con detector de gestos táctiles (Tap)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -263,8 +248,6 @@ fun GraficoLineaInteractivoCanvas(puntos: List<PuntoVenta>) {
                     detectTapGestures { offset ->
                         val width = size.width
                         val pasoX = if (puntos.size > 1) width / (puntos.size - 1) else width
-
-                        // Buscar el punto más cercano en el eje X al lugar donde el usuario tocó
                         var indiceMasCercano = 0
                         var menorDistancia = Float.MAX_VALUE
 
@@ -277,7 +260,6 @@ fun GraficoLineaInteractivoCanvas(puntos: List<PuntoVenta>) {
                             }
                         }
 
-                        // Si el toque está dentro de una tolerancia razonable, seleccionamos el punto
                         if (menorDistancia < 70f) {
                             puntoSeleccionadoIndex = indiceMasCercano
                         } else {
@@ -290,7 +272,6 @@ fun GraficoLineaInteractivoCanvas(puntos: List<PuntoVenta>) {
                 val width = size.width
                 val height = size.height
 
-                // 1. Líneas de guía horizontales de fondo adaptadas al tema
                 val lineasGuia = 4
                 for (i in 0 until lineasGuia) {
                     val y = height * (i.toFloat() / (lineasGuia - 1))
@@ -302,13 +283,12 @@ fun GraficoLineaInteractivoCanvas(puntos: List<PuntoVenta>) {
                     )
                 }
 
-                // 2. Trazado de la línea de tendencia con el color primario
                 val path = Path()
                 val pasoX = if (puntos.size > 1) width / (puntos.size - 1) else width
 
                 puntos.forEachIndexed { index, punto ->
                     val x = index * pasoX
-                    val y = height - (height * (punto.cantidad.toFloat() / maxValor))
+                    val y = height - (height * (punto.valor.toFloat() / maxValor))
 
                     if (index == 0) {
                         path.moveTo(x, y)
@@ -323,19 +303,16 @@ fun GraficoLineaInteractivoCanvas(puntos: List<PuntoVenta>) {
                     style = Stroke(width = 3.dp.toPx())
                 )
 
-                // 3. Dibujar un indicador visual (círculo) si el usuario toca un punto específico
                 puntoSeleccionadoIndex?.let { index ->
                     if (index < puntos.size) {
                         val x = index * pasoX
-                        val y = height - (height * (puntos[index].cantidad.toFloat() / maxValor))
+                        val y = height - (height * (puntos[index].valor.toFloat() / maxValor))
 
-                        // Círculo exterior de selección
                         drawCircle(
                             color = Color.White,
                             radius = 6.dp.toPx(),
                             center = Offset(x, y)
                         )
-                        // Círculo interior con color primario
                         drawCircle(
                             color = colorPrimario,
                             radius = 3.dp.toPx(),
@@ -348,13 +325,12 @@ fun GraficoLineaInteractivoCanvas(puntos: List<PuntoVenta>) {
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Fechas de inicio y fin en la parte inferior del gráfico
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(text = puntos.first().etiquetaFecha, color = MaterialTheme.colorScheme.outline, fontSize = 11.sp)
-            Text(text = puntos.last().etiquetaFecha, color = MaterialTheme.colorScheme.outline, fontSize = 11.sp)
+            Text(text = puntos.first().etiqueta, color = MaterialTheme.colorScheme.outline, fontSize = 11.sp)
+            Text(text = puntos.last().etiqueta, color = MaterialTheme.colorScheme.outline, fontSize = 11.sp)
         }
     }
 }

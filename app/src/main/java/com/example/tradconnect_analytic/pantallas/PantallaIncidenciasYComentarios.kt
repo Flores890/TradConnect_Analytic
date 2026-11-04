@@ -25,7 +25,6 @@ fun PantallaIncidenciasYComentarios(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Sección 1: Incidencias por proveedor
         item {
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(16.dp)) {
@@ -52,7 +51,6 @@ fun PantallaIncidenciasYComentarios(
             }
         }
 
-        // Sección 2: Comentarios Post-Compra
         item {
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = "Comentarios Post-Compra", style = MaterialTheme.typography.titleLarge)
@@ -61,14 +59,13 @@ fun PantallaIncidenciasYComentarios(
         items(listaComentarios) { comentario ->
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(12.dp)) {
-                    Text(text = comentario.nombreUsuario, fontWeight = FontWeight.Bold)
+                    Text(text = comentario.autor, fontWeight = FontWeight.Bold)
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(text = comentario.contenido)
+                    Text(text = comentario.opinion)
                 }
             }
         }
 
-        // Sección 3: Necesidades No Satisfechas
         item {
             Spacer(modifier = Modifier.height(8.dp))
             Text(text = "Necesidades No Satisfechas", style = MaterialTheme.typography.titleLarge)
@@ -77,9 +74,9 @@ fun PantallaIncidenciasYComentarios(
         items(listaNecesidades) { necesidad ->
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(12.dp)) {
-                    Text(text = necesidad.tituloNecesidad, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    Text(text = necesidad.titulo, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.height(4.dp))
-                    Text(text = necesidad.detalleReporte)
+                    Text(text = necesidad.detalle)
                 }
             }
         }
