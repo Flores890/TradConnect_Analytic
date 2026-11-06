@@ -58,4 +58,7 @@ dependencies {
 
     // Gson: convierte las respuestas JSON en objetos Kotlin
     implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+
+    //Iconos
+    implementation("com.composables:icons-lucide-cmp:2.2.1")
 }
