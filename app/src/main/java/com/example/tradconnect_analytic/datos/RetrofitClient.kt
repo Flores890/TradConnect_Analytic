@@ -5,9 +5,8 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
 
-    // Dirección principal de la API alojada en Azure
-    private const val BASE_URL =
-        "https://tradconnec-api-g9brdvb6bpaddvfz.westus-01.azurewebsites.net/api/"
+    // Dirección principal de la API alojada en Azure-- temporalmente en local
+    private const val BASE_URL = "http://10.39.239.249:8000/api/"
 
     // Crear la conexión con Retrofit
     val api: ApiService by lazy {

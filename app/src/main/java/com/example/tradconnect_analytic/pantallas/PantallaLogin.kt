@@ -36,7 +36,7 @@ fun PantallaLogin(onLoginSuccess: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "ProveedorAnalytics",
+                text = "Inicio de Seción a TradConnect Analytic",
                 style = MaterialTheme.typography.headlineMedium,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -44,7 +44,7 @@ fun PantallaLogin(onLoginSuccess: () -> Unit) {
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Acceso Administrativo y Proveedores",
+                text = "Area Administrativa y de Analicis",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -54,7 +54,7 @@ fun PantallaLogin(onLoginSuccess: () -> Unit) {
             OutlinedTextField(
                 value = email,
                 onValueChange = { email = it },
-                label = { Text("Correo electrónico o usuario") },
+                label = { Text("Correo electrónico o nombre de usuario") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
@@ -95,31 +95,28 @@ fun PantallaLogin(onLoginSuccess: () -> Unit) {
                         try {
                             val response = RetrofitClient.api.login(LoginRequest(email.trim(), password))
 
+                            // Desactivamos el indicador de carga al recibir respuesta
+                            isLoading = false
+
                             if (response.isSuccessful && response.body() != null) {
-                                val resultado = response.body()!!
-                                val rolNombre = resultado.usuario.nombre_rol?.lowercase() ?: ""
-                                val rolTipo = resultado.usuario.rol?.lowercase() ?: ""
+                                val resultado = response.body()
+                                val usuario = resultado?.usuario
+                                val access = resultado?.tokens?.access
+                                val refresh = resultado?.tokens?.refresh
+                                val rolNombre = usuario?.rolNombre.orEmpty()
 
-                                // Validación de roles permitidos (Admin o Proveedor)
-                                val esValido = rolNombre.contains("admin") ||
-                                        rolNombre.contains("administrador") ||
-                                        rolNombre.contains("proveedor") ||
-                                        rolNombre.contains("provider") ||
-                                        rolTipo.contains("admin") ||
-                                        rolTipo.contains("proveedor") ||
-                                        rolTipo.contains("provider")
-
-                                if (esValido) {
-                                    // Guardar token de forma segura
-                                    tokenManager.saveTokens(resultado.tokens.access, resultado.tokens.refresh)
-                                    isLoading = false
+                                if (
+                                    rolNombre.equals("Proveedor", ignoreCase = true) &&
+                                    !access.isNullOrBlank() &&
+                                    !refresh.isNullOrBlank()
+                                ) {
+                                    tokenManager.saveTokens(access, refresh)
                                     onLoginSuccess()
                                 } else {
-                                    isLoading = false
-                                    errorMessage = "Acceso denegado: El rol '${resultado.usuario.nombre_rol}' no está autorizado."
+                                    errorMessage =
+                                        "La respuesta no contiene tokens válidos o la cuenta no tiene el rol Proveedor."
                                 }
                             } else {
-                                isLoading = false
                                 errorMessage = "Credenciales incorrectas o error en el servidor."
                             }
                         } catch (e: Exception) {
@@ -140,6 +137,7 @@ fun PantallaLogin(onLoginSuccess: () -> Unit) {
                 } else {
                     Text("Ingresar")
                 }
+
             }
         }
     }
