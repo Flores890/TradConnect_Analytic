@@ -33,6 +33,7 @@ import com.example.tradconnect_analytic.datos.LoginRequest
 import com.example.tradconnect_analytic.datos.RetrofitClient
 import com.example.tradconnect_analytic.datos.TokenManager
 import kotlinx.coroutines.launch
+import java.util.Locale
 
 private val FondoInicio = Color(0xFF0B1220)
 private val FondoFinal = Color(0xFF142B43)
@@ -47,7 +48,7 @@ fun PantallaLogin(onLoginSuccess: () -> Unit) {
     val tokenManager = remember { TokenManager(context) }
 
     val rolesPermitidos = remember {
-        setOf("ADMIN", "ANALISTA", "PROVEEDOR", "GERENCIA")
+        setOf("ADMIN", "ADMINISTRADOR", "PROVEEDOR")
     }
 
     var usuario by rememberSaveable { mutableStateOf("") }
@@ -88,7 +89,7 @@ fun PantallaLogin(onLoginSuccess: () -> Unit) {
                 val refresh = resultado?.tokens?.refresh
                 val rol = resultado?.usuario?.rolNombre
                     ?.trim()
-                    ?.uppercase()
+                    ?.uppercase(Locale.ROOT)
                     .orEmpty()
 
                 if (access.isNullOrBlank() || refresh.isNullOrBlank()) {
@@ -96,7 +97,7 @@ fun PantallaLogin(onLoginSuccess: () -> Unit) {
                 } else if (rol !in rolesPermitidos) {
                     errorMessage = "El usuario no cuenta con credenciales adecuadas para acceder."
                 } else {
-                    tokenManager.saveTokens(access, refresh)
+                    tokenManager.saveTokens(access, refresh, rol)
                     onLoginSuccess()
                  }
 

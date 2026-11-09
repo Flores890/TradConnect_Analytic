@@ -1,6 +1,5 @@
 package com.example.tradconnect_analytic.datos
 
-// Estructura para los puntos de los gráficos de ventas
 data class PuntoVenta(
     val etiqueta: String,
     val valor: Int
@@ -13,33 +12,37 @@ data class DatosPeriodoVentas(
     val puntosHistorial: List<PuntoVenta>
 )
 
-// Estructura para las evaluaciones de proveedores (MongoDB / SQL)
 data class EvaluacionCliente(
     val id: String,
     val clienteNombre: String,
     val puntuacion: Double,
     val comentario: String?,
-    val fecha: String
+    val fecha: String,
+    val calidad: Int? = null,
+    val tiempoEntrega: Int? = null,
+    val precio: Int? = null,
+    val atencion: Int? = null
 )
 
-// Estructura para incidencias
 data class Incidencia(
     val id: String,
     val titulo: String,
     val descripcion: String,
-    val estado: String
+    val estado: String,
+    val fecha: String = "",
+    val fechaRespuesta: String = ""
 )
 
-// Estructura para comentarios post-compra
 data class ComentarioPostCompra(
     val id: String,
     val autor: String,
-    val opinion: String
+    val opinion: String,
+    val calificacion: Int? = null,
+    val fecha: String = "",
+    val fechaRespuesta: String = ""
 )
 
-// Estructura para necesidades no satisfechas
 data class NecesidadNoSatisfecha(
-    val id: String,
     val titulo: String,
     val detalle: String
 )

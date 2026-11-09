@@ -18,7 +18,7 @@ data class LoginResponse(
 )
 
 data class UsuarioData(
-    val id: String?, // El ID Mongo, por ejemplo: "usr_demo_00505"
+    val id: String?,
     @SerializedName("rol_nombre")
     val rolNombre: String?,
     @SerializedName("nombreusuario")
@@ -26,3 +26,4 @@ data class UsuarioData(
     @SerializedName("correoelectronico")
     val correoElectronico: String?
 )
+

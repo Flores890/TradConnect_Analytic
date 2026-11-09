@@ -1,0 +1,79 @@
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:generateDebugRFile UP-TO-DATE
+
+> Task :app:compileDebugKotlin
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/AnaliticaApiModels.kt:110:9 Conflicting declarations:
+fechaRespuesta: String? = ...
+fechaRespuesta: String? = ...
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/AnaliticaApiModels.kt:110:9 Conflicting declarations:
+val fechaRespuesta: String?
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/AnaliticaApiModels.kt:112:9 Conflicting declarations:
+fechaRespuesta: String? = ...
+fechaRespuesta: String? = ...
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/AnaliticaApiModels.kt:112:9 Conflicting declarations:
+val fechaRespuesta: String?
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/PantallaEvaluaciones.kt:45:1 Conflicting overloads:
+fun PantallaEvaluaciones(promedioCalificacion: Double, listaEvaluaciones: List<EvaluacionCliente>): Unit
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/PantallaIncidenciasYComentarios.kt:37:1 Conflicting overloads:
+fun PantallaIncidencias(listaIncidencias: List<Incidencia>): Unit
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/PantallaVentasApi.kt:107:25 Unresolved reference 'normalizarFecha'.
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/PantallaVentasApi.kt:109:33 Unresolved reference 'estadoActual'.
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/PantallaVentasApi.kt:123:24 Unresolved reference 'inicioSemana'.
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/PantallaVentasApi.kt:134:9 Unresolved reference 'formatoDiaCorto'.
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/PantallaVentasApi.kt:145:32 Unresolved reference 'promediosPorDiaSemana'.
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/PantallaVentasApi.kt:167:30 Unresolved reference 'restauranteNombre'.
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/PantallaVentasApi.kt:174:25 Unresolved reference 'restauranteNombre'.
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/PantallaVentasApi.kt:272:17 Unresolved reference 'GraficoBarras'.
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/PantallaVentasApi.kt:291:17 Unresolved reference 'GraficoBarras'.
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/PantallaVentasApi.kt:321:17 Unresolved reference 'GraficoBarras'.
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/PantallaVentasApi.kt:322:40 Unresolved reference 'it'.
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/PantallaVentasApi.kt:323:40 Unresolved reference 'it'.
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/PantallaVentasApi.kt:343:11 Syntax error: Unexpected tokens (use ';' to separate expressions on the same line).
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/PantallaVentasApi.kt:345:17 Unresolved reference 'GraficoBarras'.
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/PantallaVentasApi.kt:369:17 Unresolved reference 'GraficoBarras'.
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/PantallaVentasApi.kt:370:48 Unresolved reference 'it'.
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/PantallaVentasApi.kt:371:48 Unresolved reference 'it'.
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/PantallaVentasApi.kt:393:17 Unresolved reference 'GraficoBarras'.
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/PantallaVentasApi.kt:417:17 Cannot access 'fun TarjetaCategoria(categoria: CategoriaVentaApi, formato: NumberFormat, ingresoMaximo: Double): Unit': it is private in file.
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/PantallaVentasApi.kt:480:1 Modifier 'private' is not applicable to 'local function'.
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/PantallaVentasApi.kt:505:13 Cannot access 'fun BarraProporcional(progreso: Float, modifier: Modifier = ...): Unit': it is private in file.
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/PantallaVentasApi.kt:519:1 Modifier 'private' is not applicable to 'local function'.
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/PantallaVentasApi.kt:540:1 Modifier 'private' is not applicable to 'local function'.
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/PantallaVentasApi.kt:577:1 Modifier 'private' is not applicable to 'local function'.
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/PantallaVentasApi.kt:588:1 Modifier 'private' is not applicable to 'local function'.
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/PantallaVentasApi.kt:602:1 Modifier 'private' is not applicable to 'local function'.
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/PantallaVentasApi.kt:632:1 Modifier 'private' is not applicable to 'local variable'.
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/PantallaVentasApi.kt:632:78 Syntax error: Expecting '}'.
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/TradConnectApp.kt:10:43 Cannot access 'val RowColumnParentData?.weight: Float': it is internal in file.
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/TradConnectApp.kt:135:57 Overload resolution ambiguity between candidates:
+val fechaRespuesta: String?
+val fechaRespuesta: String?
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/TradConnectApp.kt:243:30 Overload resolution ambiguity between candidates:
+fun PantallaEvaluaciones(promedioCalificacion: Double, listaEvaluaciones: List<EvaluacionCliente>): Unit
+fun PantallaEvaluaciones(promedioCalificacion: Double, listaEvaluaciones: List<EvaluacionCliente>): Unit
+e: file:///C:/Users/flore/Desktop/TradConnect_Analytic/app/src/main/java/com/example/tradconnect_analytic/TradConnectApp.kt:247:30 Overload resolution ambiguity between candidates:
+fun PantallaIncidencias(listaIncidencias: List<Incidencia>): Unit
+fun PantallaIncidencias(listaIncidencias: List<Incidencia>): Unit
+
+> Task :app:compileDebugKotlin FAILED
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:compileDebugKotlin' (registered by plugin 'com.android.internal.application').
+> A failure occurred while executing org.jetbrains.kotlin.compilerRunner.GradleCompilerRunnerWithWorkers$GradleKotlinCompilerWorkAction
+   > Compilation error. See log for more details
+
+* Try:
+> Run with --stacktrace option to get the stack trace.
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+> Get more help at https://help.gradle.org.
+
+BUILD FAILED in 1m 1s
+6 actionable tasks: 1 executed, 5 up-to-date
