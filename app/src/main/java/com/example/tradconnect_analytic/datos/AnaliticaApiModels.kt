@@ -10,20 +10,29 @@ data class PaginaApi<T>(
 data class AnaliticaProveedorApi(
     val ventas: List<VentaMesApi> = emptyList(),
     val estados: List<EstadoPedidoApi> = emptyList(),
-    val productos: List<ProductoVendidoApi> = emptyList(),
+    val productos: List<ProductoVendidoApi>  = emptyList(),
     val categorias: List<CategoriaVentaApi> = emptyList(),
     val clientes: List<ClienteFrecuenteApi> = emptyList(),
     val feedback: FeedbackApi? = null,
+    val monedas: List<MonedaAnaliticaApi> = emptyList(),
     @SerializedName("moneda")
     val monedaId: Int? = null
+ ) {
+    val monedaNombre: String
+        get() = monedas.firstOrNull { it.id == monedaId }?.nombre
+            ?.takeIf { it.isNotBlank() }
+            ?: "Moneda " + (monedaId?.toString() ?: "sin identificar")
+}
+
+data class EmpresaActualApi(
+    val id: String? = null,
+    @SerializedName("razonsocial") val razonSocial: String? = null
 )
 
-data class MiDataApi(
-    val empresa: EmpresaSesionApi? = null
-)
-
-data class EmpresaSesionApi(
-    val id: String? = null
+data class MonedaAnaliticaApi(
+    val id: Int? = null,
+    @SerializedName("nombremoneda")
+    val nombre: String? = null
 )
 
 data class VentaMesApi(
@@ -94,6 +103,15 @@ data class EvaluacionApi(
     val precio: Int? = null,
     val atencion: Int? = null,
     val comentario: String? = null,
+    val fecha: String? = null
+)
+
+data class ComentarioApi(
+    @SerializedName("_id") val id: String? = null,
+    @SerializedName("proveedor_empresa_id") val proveedorEmpresaId: String? = null,
+    @SerializedName("cliente_nombre") val cliente: String? = null,
+    @SerializedName("opinion_libre") val opinion: String? = null,
+    val calificacion: Int? = null,
     val fecha: String? = null
 )
 

@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -35,10 +36,10 @@ import com.example.tradconnect_analytic.datos.TokenManager
 import kotlinx.coroutines.launch
 import java.util.Locale
 
-private val FondoInicio = Color(0xFF0B1220)
-private val FondoFinal = Color(0xFF142B43)
-private val VerdeAcento = Color(0xFF35D6B0)
-private val TextoSecundario = Color(0xFF64748B)
+private val FondoInicio = Color(0xFF173D35)
+private val FondoFinal = Color(0xFFEAF1F1)
+private val VerdeAcento = Color(0xFF287F70)
+private val TextoSecundario = Color(0xFF53646C)
 
 @Composable
 fun PantallaLogin(onLoginSuccess: () -> Unit) {
@@ -48,11 +49,12 @@ fun PantallaLogin(onLoginSuccess: () -> Unit) {
     val tokenManager = remember { TokenManager(context) }
 
     val rolesPermitidos = remember {
-        setOf("ADMIN", "ADMINISTRADOR", "PROVEEDOR")
+        setOf("PROVEEDOR")
     }
 
     var usuario by rememberSaveable { mutableStateOf("") }
-    var password by rememberSaveable { mutableStateOf("") }
+    // La contraseña no se guarda al recrear la actividad.
+    var password by remember { mutableStateOf("") }
     var mostrarPassword by rememberSaveable { mutableStateOf(false) }
     var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
     var isLoading by rememberSaveable { mutableStateOf(false) }
@@ -97,7 +99,14 @@ fun PantallaLogin(onLoginSuccess: () -> Unit) {
                 } else if (rol !in rolesPermitidos) {
                     errorMessage = "El usuario no cuenta con credenciales adecuadas para acceder."
                 } else {
-                    tokenManager.saveTokens(access, refresh, rol)
+                    tokenManager.saveTokens(
+                        accessToken = access,
+                        refreshToken = refresh,
+                        role = rol,
+                        userName = resultado.usuario?.nombreUsuario
+                            ?.takeIf { it.isNotBlank() }
+                            ?: resultado.usuario?.correoElectronico
+                    )
                     onLoginSuccess()
                  }
 
@@ -114,7 +123,7 @@ fun PantallaLogin(onLoginSuccess: () -> Unit) {
             .fillMaxSize()
             .background(
                 Brush.linearGradient(
-                    colors = listOf(FondoInicio, Color(0xFF102238), FondoFinal)
+                    colors = listOf(Color(0xFFF4F6F7), Color(0xFFF9FAFA), FondoFinal)
                 )
             )
     ) {
@@ -142,18 +151,15 @@ fun PantallaLogin(onLoginSuccess: () -> Unit) {
                 modifier = Modifier
                     .size(58.dp)
                     .background(
-                        brush = Brush.linearGradient(
-                            listOf(VerdeAcento, Color(0xFF86F0D8))
-                        ),
+                        color = FondoInicio,
                         shape = RoundedCornerShape(19.dp)
                     ),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = "T",
-                    color = FondoInicio,
-                    fontSize = 32.sp,
-                    fontWeight = FontWeight.Black
+                androidx.compose.foundation.Image(
+                    painter = painterResource(id = com.example.tradconnect_analytic.R.drawable.ic_launcher_foreground),
+                    contentDescription = "Logo de TradConnect Analytic",
+                    modifier = Modifier.fillMaxSize()
                 )
             }
 
@@ -161,7 +167,7 @@ fun PantallaLogin(onLoginSuccess: () -> Unit) {
 
             Text(
                 text = "TradConnect Analytic",
-                color = Color.White,
+                color = Color(0xFF1D2529),
                 fontSize = 25.sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1
@@ -171,7 +177,7 @@ fun PantallaLogin(onLoginSuccess: () -> Unit) {
 
             Text(
                 text = "Tu comercio, en perspectiva.",
-                color = Color(0xFFB8C7D9),
+                color = Color(0xFF53646C),
                 style = MaterialTheme.typography.bodyLarge
             )
 
@@ -183,14 +189,14 @@ fun PantallaLogin(onLoginSuccess: () -> Unit) {
                     .widthIn(max = 460.dp)
                     .border(
                         width = 1.dp,
-                        color = Color.White.copy(alpha = 0.16f),
+                        color = Color(0xFF173D35).copy(alpha = 0.08f),
                         shape = RoundedCornerShape(26.dp)
                     ),
                 shape = RoundedCornerShape(26.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(0xFFF9FBFD)
+                    colors = CardDefaults.cardColors(
+                    containerColor = Color.White
                 ),
-                elevation = CardDefaults.cardElevation(defaultElevation = 10.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
                 Column(
                     modifier = Modifier.padding(24.dp),
@@ -198,7 +204,7 @@ fun PantallaLogin(onLoginSuccess: () -> Unit) {
                 ) {
                     Text(
                         text = "Inicia sesión",
-                        color = Color(0xFF122238),
+                        color = Color(0xFF1D2529),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
@@ -228,22 +234,20 @@ fun PantallaLogin(onLoginSuccess: () -> Unit) {
                             onNext = { focusManager.moveFocus(FocusDirection.Down) }
                         ),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedContainerColor = Color(0xFFFFFFFF),
-                            unfocusedContainerColor = Color(0xFFF3F7FA),
-                            disabledContainerColor = Color(0xFFE9EFF5),
-
-                            disabledTextColor = Color(0xFF334155),
-                            disabledBorderColor = Color(0xFF94A3B8),
-                            disabledLabelColor = Color(0xFF52657A),
-                            disabledTrailingIconColor = Color(0xFF52657A),
-                            focusedTextColor = FondoInicio,
-
-                            unfocusedTextColor = FondoInicio,
-                            focusedBorderColor = Color(0xFF138F7A),
-                            unfocusedBorderColor = Color(0xFFCBD5E1),
-                            focusedLabelColor = Color(0xFF138F7A),
-                            unfocusedLabelColor = TextoSecundario,
-                            cursorColor = Color(0xFF138F7A)
+                            focusedContainerColor = Color(0xFFF2F6F6),
+                            unfocusedContainerColor = Color(0xFFF6F8F8),
+                            disabledContainerColor = Color(0xFFE9EEEE),
+                            disabledTextColor = Color(0xFF7C898E),
+                            disabledBorderColor = Color(0xFFB8C2C5),
+                            disabledLabelColor = Color(0xFF68777D),
+                            disabledTrailingIconColor = Color(0xFF68777D),
+                            focusedTextColor = Color(0xFF1D2529),
+                            unfocusedTextColor = Color(0xFF1D2529),
+                            focusedBorderColor = Color(0xFF287F70),
+                            unfocusedBorderColor = Color(0xFFC7D1D4),
+                            focusedLabelColor = Color(0xFF287F70),
+                            unfocusedLabelColor = Color(0xFF53646C),
+                            cursorColor = Color(0xFF287F70)
                         )
                     )
 
@@ -279,7 +283,7 @@ fun PantallaLogin(onLoginSuccess: () -> Unit) {
                                     } else {
                                         "Mostrar contraseña"
                                     },
-                                    tint = TextoSecundario
+                                    tint = Color(0xFF53646C)
                                 )
                             }
                         },
@@ -291,20 +295,23 @@ fun PantallaLogin(onLoginSuccess: () -> Unit) {
                             onDone = { iniciarSesion() }
                         ),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedTextColor = FondoInicio,
-                            unfocusedTextColor = FondoInicio,
-                            focusedBorderColor = Color(0xFF138F7A),
-                            unfocusedBorderColor = Color(0xFFCBD5E1),
-                            focusedLabelColor = Color(0xFF138F7A),
-                            unfocusedLabelColor = TextoSecundario,
-                            cursorColor = Color(0xFF138F7A)
+                            focusedContainerColor = Color(0xFFF2F6F6),
+                            unfocusedContainerColor = Color(0xFFF6F8F8),
+                            disabledContainerColor = Color(0xFFE9EEEE),
+                            focusedTextColor = Color(0xFF1D2529),
+                            unfocusedTextColor = Color(0xFF1D2529),
+                            focusedBorderColor = Color(0xFF287F70),
+                            unfocusedBorderColor = Color(0xFFC7D1D4),
+                            focusedLabelColor = Color(0xFF287F70),
+                            unfocusedLabelColor = Color(0xFF53646C),
+                            cursorColor = Color(0xFF287F70)
                         )
                     )
 
                     if (errorMessage != null) {
                         Text(
                             text = errorMessage.orEmpty(),
-                            color = Color(0xFFC2410C),
+                            color = Color(0xFF9A4D35),
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
@@ -317,16 +324,16 @@ fun PantallaLogin(onLoginSuccess: () -> Unit) {
                         enabled = !isLoading,
                         shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = VerdeAcento,
-                            contentColor = FondoInicio,
-                            disabledContainerColor = VerdeAcento.copy(alpha = 0.55f),
-                            disabledContentColor = FondoInicio.copy(alpha = 0.7f)
+                            containerColor = Color(0xFF287F70),
+                            contentColor = Color.White,
+                            disabledContainerColor = Color(0xFF287F70).copy(alpha = 0.55f),
+                            disabledContentColor = Color.White.copy(alpha = 0.75f)
                         )
                     ) {
                         if (isLoading) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(22.dp),
-                                color = FondoInicio,
+                                color = Color.White,
                                 strokeWidth = 2.dp
                             )
                             Spacer(modifier = Modifier.width(10.dp))

@@ -12,6 +12,9 @@ data class TokenData(
     val refresh: String?
 )
 
+data class RefreshTokenRequest(val refresh: String)
+data class RefreshTokenResponse(val access: String?)
+
 data class LoginResponse(
     val tokens: TokenData?,
     val usuario: UsuarioData?

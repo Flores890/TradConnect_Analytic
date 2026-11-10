@@ -20,7 +20,11 @@ android {
     }
 
     buildTypes {
+        debug {
+            manifestPlaceholders["allowCleartextTraffic"] = "true"
+        }
         release {
+            manifestPlaceholders["allowCleartextTraffic"] = "false"
             optimization {
                 enable = false
             }
@@ -61,4 +65,8 @@ dependencies {
 
     //Iconos
     implementation("com.composables:icons-lucide-cmp:2.2.1")
+
+    // Imágenes remotas de productos entregadas por la API.
+    implementation("io.coil-kt.coil3:coil-compose:3.3.0")
+    implementation("io.coil-kt.coil3:coil-network-okhttp:3.3.0")
 }

@@ -1,27 +1,29 @@
 package com.example.tradconnect_analytic.datos
 
-import com.google.gson.JsonObject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withContext
 
+/** Carga datos permitidos para la empresa asociada a la sesión del proveedor. */
 class AnaliticaRepository(private val api: ApiService) {
     suspend fun cargarDatosProveedor(token: String, desde: String, hasta: String): DatosProveedorApi =
         withContext(Dispatchers.IO) {
             val auth = "Bearer " + token
 
-            // No se carga ningún dato de ventas hasta confirmar la empresa de esta sesión.
-            val identidadResponse = api.obtenerMisDatos(auth)
-            if (!identidadResponse.isSuccessful) {
-                error("No se pudo verificar la empresa del proveedor. Código " + identidadResponse.code())
+            // Este recurso devuelve solo la empresa asociada a la sesión; auth/my-data
+            // construye un snapshot SQL amplio que la app no utiliza.
+            val empresaResponse = api.obtenerEmpresaActual(auth)
+            if (!empresaResponse.isSuccessful) {
+                throw ApiRequestException(empresaResponse.code(), "No se pudo verificar la empresa del proveedor.")
             }
-            val empresaId = identidadResponse.body()?.empresa?.id?.takeIf { it.isNotBlank() }
+            val empresa = empresaResponse.body()?.firstOrNull()
+            val empresaId = empresa?.id?.takeIf { it.isNotBlank() }
                 ?: error("La sesión no tiene una empresa de proveedor verificable.")
 
             // Esta ruta también valida en servidor que el token sea de un Proveedor.
             val analiticaResponse = api.obtenerAnaliticaProveedor(auth, desde, hasta)
             if (!analiticaResponse.isSuccessful) {
-                error("Analítica no disponible. Código " + analiticaResponse.code())
+                throw ApiRequestException(analiticaResponse.code(), "Analítica no disponible.")
             }
             val analitica = analiticaResponse.body()
                 ?: error("La API devolvió la analítica vacía.")
@@ -30,6 +32,7 @@ class AnaliticaRepository(private val api: ApiService) {
             catch (cancelled: CancellationException) { throw cancelled }
             catch (error: Exception) { null }
             val pedidosSqlDisponibles = pedidosResponse?.isSuccessful == true && pedidosResponse.body() != null
+            if (pedidosResponse?.code() == 401) throw ApiRequestException(401, "La sesión ya no está autorizada.")
             val pedidos = if (pedidosSqlDisponibles) {
                 // Se excluyen únicamente pedidos cancelados; cualquier otro estado se contabiliza.
                 pedidosResponse?.body().orEmpty().filter { pedido ->
@@ -50,6 +53,7 @@ class AnaliticaRepository(private val api: ApiService) {
             catch (cancelled: CancellationException) { throw cancelled }
             catch (error: Exception) { null }
             val productosSqlDisponibles = productosResponse?.isSuccessful == true && productosResponse.body() != null
+            if (productosResponse?.code() == 401) throw ApiRequestException(401, "La sesión ya no está autorizada.")
             val productos = if (productosSqlDisponibles) {
                 productosResponse?.body().orEmpty().filter { it.empresaId == empresaId }
             } else emptyList()
@@ -65,7 +69,15 @@ class AnaliticaRepository(private val api: ApiService) {
             catch (error: Exception) { null }
             val metodosPago = metodosResponse?.takeIf { it.isSuccessful }?.body().orEmpty()
 
+            val monedasResponse = try { api.obtenerCatalogoMonedas() }
+            catch (cancelled: CancellationException) { throw cancelled }
+            catch (error: Exception) { null }
+            val monedas = monedasResponse?.takeIf { it.isSuccessful }?.body().orEmpty()
+            val simboloMoneda = monedas.firstOrNull { it.id == analitica.monedaId }
+                ?.simbolo?.trim()?.takeIf { it.isNotEmpty() }
+
             val evaluacionesCarga = cargarPaginasOpcional { offset -> api.obtenerEvaluacionesProveedor(auth, offset) }
+            val comentariosCarga = cargarPaginasOpcional { offset -> api.obtenerComentariosProveedor(auth, offset) }
             val incidenciasCarga = cargarPaginasOpcional { offset -> api.obtenerIncidenciasProveedor(auth, offset) }
 
             DatosProveedorApi(
@@ -75,24 +87,20 @@ class AnaliticaRepository(private val api: ApiService) {
                 productosCatalogo = productos,
                 productosSqlDisponibles = productosSqlDisponibles,
                 metodosPago = metodosPago,
+                simboloMoneda = simboloMoneda,
                 pedidosSqlDisponibles = pedidosSqlDisponibles,
                 mensajePedidos = mensajePedidos,
                 mensajeProductos = mensajeProductos,
                 evaluaciones = evaluacionesCarga.elementos.filter { it.proveedorEmpresaId == empresaId },
                 mensajeEvaluaciones = evaluacionesCarga.error,
+                comentarios = comentariosCarga.elementos.filter { it.proveedorEmpresaId == empresaId },
+                mensajeComentarios = comentariosCarga.error,
                 incidencias = incidenciasCarga.elementos.filter { it.proveedorEmpresaId == empresaId },
-                mensajeIncidencias = incidenciasCarga.error
+                mensajeIncidencias = incidenciasCarga.error,
+                usuarioNombre = null,
+                empresaNombre = empresa.razonSocial?.takeIf { it.isNotBlank() }
             )
         }
-
-    suspend fun cargarDatosAdmin(token: String): DatosAdminApi = withContext(Dispatchers.IO) {
-        val auth = "Bearer " + token
-        DatosAdminApi(
-            evaluaciones = cargarPaginasAdmin(auth, "evaluaciones_proveedores"),
-            incidencias = cargarPaginasAdmin(auth, "incidencias_entregas"),
-            transacciones = cargarPaginasAdmin(auth, "transacciones_no_exitosas")
-        )
-    }
 
     private suspend fun <T> cargarPaginas(
         llamada: suspend (offset: Int) -> retrofit2.Response<PaginaApi<T>>
@@ -101,7 +109,7 @@ class AnaliticaRepository(private val api: ApiService) {
         var offset = 0
         while (true) {
             val respuesta = llamada(offset)
-            if (!respuesta.isSuccessful) error("No se pudo cargar la información. Código ${respuesta.code()}")
+            if (!respuesta.isSuccessful) throw ApiRequestException(respuesta.code(), "No se pudo cargar la información.")
             val pagina = respuesta.body() ?: error("La API devolvió una página vacía.")
             acumulado += pagina.results
             if (pagina.results.size < 50) break
@@ -118,23 +126,10 @@ class AnaliticaRepository(private val api: ApiService) {
     } catch (cancelled: CancellationException) {
         throw cancelled
     } catch (error: Exception) {
+        if (error is ApiRequestException && error.statusCode == 401) throw error
         ResultadoCarga(emptyList(), error.localizedMessage ?: "No fue posible cargar esta sección.")
     }
 
-    private suspend fun cargarPaginasAdmin(auth: String, coleccion: String): List<JsonObject> {
-        val acumulado = mutableListOf<JsonObject>()
-        var offset = 0
-        while (true) {
-            val respuesta = api.obtenerColeccionAdmin(auth, coleccion, 500, offset)
-            if (!respuesta.isSuccessful) error("Admin no puede cargar $coleccion. Código ${respuesta.code()}")
-            val pagina = respuesta.body() ?: error("La API devolvió vacía la colección $coleccion.")
-            acumulado += pagina.results
-            if (pagina.results.size < 500) break
-            offset += pagina.results.size
-            if (offset > 50_000) break
-        }
-        return acumulado
-    }
 }
 
 data class DatosProveedorApi(
@@ -144,20 +139,21 @@ data class DatosProveedorApi(
     val productosCatalogo: List<ProductoCatalogoApi>,
     val productosSqlDisponibles: Boolean,
     val metodosPago: List<MetodoPagoApi>,
+    val simboloMoneda: String?,
     val pedidosSqlDisponibles: Boolean,
     val mensajePedidos: String,
     val mensajeProductos: String,
     val evaluaciones: List<EvaluacionApi>,
     val mensajeEvaluaciones: String,
+    val comentarios: List<ComentarioApi>,
+    val mensajeComentarios: String,
     val incidencias: List<IncidenciaApi>,
-    val mensajeIncidencias: String
+    val mensajeIncidencias: String,
+    val usuarioNombre: String? = null,
+    val empresaNombre: String? = null
 )
 
 private data class ResultadoCarga<T>(val elementos: List<T>, val error: String)
 
-data class DatosAdminApi(
-    val evaluaciones: List<JsonObject>,
-    val incidencias: List<JsonObject>,
-    val transacciones: List<JsonObject>
-)
+class ApiRequestException(val statusCode: Int, message: String) : Exception("$message Código $statusCode.")
 

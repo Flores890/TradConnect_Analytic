@@ -3,36 +3,66 @@ package com.example.tradconnect_analytic
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.ModalDrawerSheet
+import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.composables.icons.lucide.ChartNoAxesCombined
+import com.composables.icons.lucide.ChartPie
+import com.composables.icons.lucide.Globe
+import com.composables.icons.lucide.LogOut
+import com.composables.icons.lucide.Lucide
+import com.composables.icons.lucide.Menu
+import com.composables.icons.lucide.Star
+import com.composables.icons.lucide.TriangleAlert
 import com.example.tradconnect_analytic.datos.AnaliticaRepository
-import com.example.tradconnect_analytic.datos.DatosAdminApi
+import com.example.tradconnect_analytic.datos.ApiRequestException
+import com.example.tradconnect_analytic.datos.ComentarioPostCompra
 import com.example.tradconnect_analytic.datos.DatosProveedorApi
 import com.example.tradconnect_analytic.datos.EvaluacionCliente
 import com.example.tradconnect_analytic.datos.Incidencia
@@ -41,10 +71,12 @@ import com.example.tradconnect_analytic.datos.TokenManager
 import com.example.tradconnect_analytic.pantallas.PantallaEvaluaciones
 import com.example.tradconnect_analytic.pantallas.PantallaIncidencias
 import com.example.tradconnect_analytic.pantallas.PantallaVentasApi
-import com.google.gson.JsonObject
+import com.example.tradconnect_analytic.pantallas.PeriodoVentas
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.launch
 
 @Composable
 fun TradConnectApp(
@@ -52,6 +84,8 @@ fun TradConnectApp(
     onLogout: () -> Unit
 ) {
     var pantallaActual by remember { mutableIntStateOf(0) }
+    var periodoVentas by remember { mutableStateOf(PeriodoVentas.HISTORICO) }
+    var retryVersion by remember { mutableIntStateOf(0) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
@@ -60,23 +94,28 @@ fun TradConnectApp(
     var accessToken by remember { mutableStateOf(tokenManager.getToken()) }
     val repository = remember { AnaliticaRepository(RetrofitClient.api) }
     val rolNormalizado = role.trim().uppercase(Locale.ROOT)
+    var nombreUsuario by remember { mutableStateOf(tokenManager.getUserName().orEmpty()) }
+    var nombreEmpresa by remember { mutableStateOf<String?>(null) }
+    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val coroutineScope = rememberCoroutineScope()
+    val uriHandler = LocalUriHandler.current
 
     var datosProveedor by remember { mutableStateOf<DatosProveedorApi?>(null) }
-    var datosAdmin by remember { mutableStateOf<DatosAdminApi?>(null) }
     var listaEvaluaciones by remember {
         mutableStateOf<List<EvaluacionCliente>>(emptyList())
     }
+    var listaComentarios by remember { mutableStateOf<List<ComentarioPostCompra>>(emptyList()) }
     var listaIncidencias by remember {
         mutableStateOf<List<Incidencia>>(emptyList())
     }
     var promedioCalificacion by remember { mutableStateOf(0.0) }
 
-    LaunchedEffect(accessToken, rolNormalizado) {
+    LaunchedEffect(accessToken, rolNormalizado, retryVersion) {
         isLoading = true
         errorMessage = null
         datosProveedor = null
-        datosAdmin = null
         listaEvaluaciones = emptyList()
+        listaComentarios = emptyList()
         listaIncidencias = emptyList()
         promedioCalificacion = 0.0
 
@@ -96,6 +135,10 @@ fun TradConnectApp(
                         hasta = fechaFin
                     )
                     datosProveedor = resultado
+                    nombreEmpresa = resultado.empresaNombre
+                    if (!resultado.usuarioNombre.isNullOrBlank()) {
+                        nombreUsuario = resultado.usuarioNombre
+                    }
 
                     listaEvaluaciones = resultado.evaluaciones.map { evaluacion ->
                         EvaluacionCliente(
@@ -116,6 +159,16 @@ fun TradConnectApp(
                         ?.average()
                         ?: 0.0
 
+                    listaComentarios = resultado.comentarios.map { comentario ->
+                        ComentarioPostCompra(
+                            id = comentario.id.orEmpty(),
+                            autor = comentario.cliente.orEmpty().ifBlank { "Cliente" },
+                            opinion = comentario.opinion.orEmpty(),
+                            calificacion = comentario.calificacion,
+                            fecha = comentario.fecha.orEmpty()
+                        )
+                    }
+
                     listaIncidencias = resultado.incidencias.map { incidencia ->
                         Incidencia(
                             id = incidencia.id.orEmpty(),
@@ -128,26 +181,110 @@ fun TradConnectApp(
                     }
                 }
 
-                "ADMIN", "ADMINISTRADOR" -> {
-                    datosAdmin = repository.cargarDatosAdmin(accessToken!!)
-                }
-
                 else -> {
-                    errorMessage =
-                        "Este usuario no cuenta con acceso a los módulos analíticos."
+                    tokenManager.clear()
+                    onLogout()
+                    return@LaunchedEffect
                 }
             }
         } catch (e: Exception) {
-            errorMessage = e.localizedMessage
-                ?: "No se pudieron cargar los datos. Comprueba la conexión con la API."
+            if (e is ApiRequestException && e.statusCode == 401 && tokenManager.getToken().isNullOrBlank()) {
+                onLogout()
+                return@LaunchedEffect
+            }
+            errorMessage = when {
+                e is ApiRequestException && e.statusCode == 401 ->
+                    "No fue posible renovar la sesión. Comprueba la conexión y vuelve a intentar."
+                else -> e.localizedMessage
+                    ?: "No se pudieron cargar los datos. Comprueba la conexión con la API."
+            }
         } finally {
             isLoading = false
         }
     }
 
-    Scaffold(
+    ModalNavigationDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            ModalDrawerSheet(modifier = Modifier.widthIn(max = 340.dp)) {
+                androidx.compose.foundation.layout.Column(
+                    modifier = Modifier.fillMaxHeight().padding(vertical = 12.dp)
+                ) {
+                    androidx.compose.foundation.layout.Column(
+                        modifier = Modifier.fillMaxWidth().background(Color(0xFF292C33)).padding(20.dp)
+                    ) {
+                        Text("TU PERFIL", color = Color(0xFFC6C5F4), style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.SemiBold)
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            nombreUsuario.ifBlank { "Usuario" },
+                            color = Color.White,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            nombreEmpresa?.takeIf { it.isNotBlank() } ?: "Empresa no disponible",
+                            color = Color(0xFFD0D1D7),
+                            style = MaterialTheme.typography.bodyMedium,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(
+                            role.trim().replaceFirstChar { it.uppercase() },
+                            color = Color(0xFFD9D8FA),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                    Spacer(Modifier.height(10.dp))
+                    NavigationDrawerItem(
+                        label = { Text("Power BI") },
+                        selected = false,
+                        onClick = {
+                            coroutineScope.launch {
+                                drawerState.close()
+                                runCatching { uriHandler.openUri(URL_POWER_BI) }
+                            }
+                        },
+                        icon = { Icon(Lucide.ChartNoAxesCombined, contentDescription = null) },
+                        modifier = Modifier.padding(horizontal = 12.dp)
+                    )
+                    NavigationDrawerItem(
+                        label = { Text("TradConnect web · acceso temporal") },
+                        selected = false,
+                        onClick = {
+                            coroutineScope.launch {
+                                drawerState.close()
+                                runCatching { uriHandler.openUri(URL_SITIO_TRADCONNECT) }
+                            }
+                        },
+                        icon = { Icon(Lucide.Globe, contentDescription = null) },
+                        modifier = Modifier.padding(horizontal = 12.dp)
+                    )
+                    Spacer(Modifier.weight(1f))
+                    HorizontalDivider(modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
+                    NavigationDrawerItem(
+                        label = { Text("Cerrar sesión") },
+                        selected = false,
+                        onClick = {
+                            coroutineScope.launch {
+                                drawerState.close()
+                                onLogout()
+                            }
+                        },
+                        icon = { Icon(Lucide.LogOut, contentDescription = null) },
+                        modifier = Modifier.padding(horizontal = 12.dp)
+                    )
+                }
+            }
+        }
+    ) {
+      Scaffold(
         topBar = {
-            Surface(color = MaterialTheme.colorScheme.primary) {
+            Surface(color = Color(0xFF292C33)) {
                 androidx.compose.foundation.layout.Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -157,36 +294,57 @@ fun TradConnectApp(
                     Text(
                         text = "TradConnect Analytic",
                         modifier = Modifier.weight(1f),
-                        color = MaterialTheme.colorScheme.onPrimary,
+                        color = Color.White,
                         style = MaterialTheme.typography.titleMedium,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
-TextButton(onClick = onLogout) {
-                        Text("Salir", color = MaterialTheme.colorScheme.onPrimary)
+                    IconButton(onClick = { coroutineScope.launch { drawerState.open() } }) {
+                        Icon(
+                            imageVector = Lucide.Menu,
+                            contentDescription = "Abrir menú lateral",
+                            tint = Color.White
+                        )
                     }
                 }
             }
         },
         bottomBar = {
-            NavigationBar {
+            val coloresNavegacion = NavigationBarItemDefaults.colors(
+                selectedIconColor = MaterialTheme.colorScheme.primary,
+                selectedTextColor = MaterialTheme.colorScheme.primary,
+                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
                 NavigationBarItem(
                     selected = pantallaActual == 0,
                     onClick = { pantallaActual = 0 },
-                    icon = { Text("📊") },
-                    label = { Text("General") }
+                    icon = { Icon(Lucide.ChartNoAxesCombined, contentDescription = null) },
+                    label = { Text("General") },
+                    colors = coloresNavegacion
+                )
+                NavigationBarItem(
+                    selected = pantallaActual == 3,
+                    onClick = { pantallaActual = 3 },
+                    icon = { Icon(Lucide.ChartPie, contentDescription = null) },
+                    label = { Text("Detalle") },
+                    colors = coloresNavegacion
                 )
                 NavigationBarItem(
                     selected = pantallaActual == 1,
                     onClick = { pantallaActual = 1 },
-                    icon = { Text("⭐") },
-                    label = { Text("Evaluaciones") }
+                    icon = { Icon(Lucide.Star, contentDescription = null) },
+                    label = { Text("Evaluaciones") },
+                    colors = coloresNavegacion
                 )
                 NavigationBarItem(
                     selected = pantallaActual == 2,
                     onClick = { pantallaActual = 2 },
-                    icon = { Text("⚠️") },
-                    label = { Text("Incidencias") }
+                    icon = { Icon(Lucide.TriangleAlert, contentDescription = null) },
+                    label = { Text("Incidencias") },
+                    colors = coloresNavegacion
                 )
             }
         }
@@ -198,15 +356,23 @@ TextButton(onClick = onLogout) {
             when {
                 isLoading -> CircularProgressIndicator()
                 errorMessage != null -> {
-                    Text(
-                        errorMessage.orEmpty(),
-                        color = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.padding(20.dp)
-                    )
+                    androidx.compose.foundation.layout.Column(
+                        modifier = Modifier.fillMaxWidth().padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Text(
+                            errorMessage.orEmpty(),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                        Button(onClick = { retryVersion++ }) {
+                            Text("Reintentar")
+                        }
+                    }
                 }
-                rolNormalizado == "PROVEEDOR" -> {
+                else -> {
                     when (pantallaActual) {
-                        0 -> {
+                        0, 3 -> {
                             val analitica = datosProveedor?.analitica
                             if (analitica == null) {
                                 Text("La API no devolvió datos de ventas.")
@@ -216,126 +382,37 @@ TextButton(onClick = onLogout) {
                                     pedidos = datosProveedor?.pedidos.orEmpty(),
                                     productosCatalogo = datosProveedor?.productosCatalogo.orEmpty(),
                                     metodosPago = datosProveedor?.metodosPago.orEmpty(),
+                                    simboloMoneda = datosProveedor?.simboloMoneda,
                                     empresaId = datosProveedor?.empresaId,
-                                    productosSqlDisponibles = datosProveedor?.productosSqlDisponibles == true,
+                                    nombreEmpresa = datosProveedor?.empresaNombre,
+                                    periodo = periodoVentas,
+                                    onPeriodoChange = { periodoVentas = it },
+                                    mostrarDetalle = pantallaActual == 3,
                                     pedidosSqlDisponibles =
                                         datosProveedor?.pedidosSqlDisponibles == true,
                                     mensajePedidos =
-                                        datosProveedor?.mensajePedidos.orEmpty(),
-                                    mensajeProductos = datosProveedor?.mensajeProductos.orEmpty()
+                                        datosProveedor?.mensajePedidos.orEmpty()
                                 )
                             }
                         }
                         1 -> PantallaEvaluaciones(
                             promedioCalificacion = promedioCalificacion,
                             listaEvaluaciones = listaEvaluaciones,
-                            mensajeCarga = datosProveedor?.mensajeEvaluaciones.orEmpty()
+                            mensajeCarga = datosProveedor?.mensajeEvaluaciones.orEmpty(),
+                            listaComentarios = listaComentarios,
+                            mensajeComentarios = datosProveedor?.mensajeComentarios.orEmpty()
                         )
                         2 -> PantallaIncidencias(listaIncidencias, datosProveedor?.mensajeIncidencias.orEmpty())
                     }
                 }
-                rolNormalizado == "ADMIN" || rolNormalizado == "ADMINISTRADOR" -> {
-                    val datos = datosAdmin
-                    if (datos == null) {
-                        Text("No hay datos administrativos disponibles.")
-                    } else {
-                        when (pantallaActual) {
-                            0 -> ResumenAdmin(datos)
-                            1 -> ResumenModuloAdmin(
-                                "Evaluaciones de proveedores",
-                                listOf(
-                                    "Evaluaciones: " + datos.evaluaciones.size
-                                )
-                            )
-                            2 -> ResumenTransaccionesFallidas(datos.transacciones)
-                        }
-                    }
-                }
-                else -> Text("No hay una vista disponible para este rol.")
             }
         }
+      }
     }
 
 }
 
-@Composable
-private fun ResumenAdmin(datos: DatosAdminApi) {
-    ResumenModuloAdmin(
-        "Resumen global de MongoDB",
-        listOf(
-            "Evaluaciones: " + datos.evaluaciones.size,
-            "Incidencias: " + datos.incidencias.size,
-            "Transacciones no exitosas: " + datos.transacciones.size
-        )
-    )
-}
-
-@Composable
-private fun ResumenTransaccionesFallidas(transacciones: List<JsonObject>) {
-    val porProveedor = transacciones
-        .groupingBy { doc ->
-            doc.texto("proveedor_nombre").ifBlank { "Proveedor sin nombre" }
-        }
-        .eachCount()
-        .toList()
-        .sortedByDescending { it.second }
-        .take(10)
-
-    ResumenModuloAdmin(
-        "Transacciones no exitosas por proveedor",
-        if (porProveedor.isEmpty()) {
-            listOf("No hay transacciones no exitosas registradas.")
-        } else {
-            porProveedor.map { (nombre, cantidad) ->
-                nombre + ": " + cantidad
-            }
-        }
-    )
-}
-
-private fun JsonObject.texto(campo: String): String {
-    val valor = get(campo) ?: return ""
-    if (valor.isJsonNull || !valor.isJsonPrimitive) return ""
-    return runCatching { valor.asString }.getOrDefault("")
-}
-
-@Composable
-private fun ResumenModuloAdmin(
-    titulo: String,
-    lineas: List<String>
-) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        item {
-            Text(titulo, style = MaterialTheme.typography.titleLarge)
-        }
-        items(lineas.size) { index ->
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            ) {
-                Text(
-                    lineas[index],
-                    modifier = Modifier.padding(18.dp),
-                    style = MaterialTheme.typography.bodyLarge
-                )
-            }
-        }
-        item {
-            Spacer(Modifier.height(8.dp))
-            Text(
-                "La información administrativa es global y solo la consulta el rol Admin.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-
+private const val URL_POWER_BI = "https://app.powerbi.com/"
+private const val URL_SITIO_TRADCONNECT = URL_POWER_BI
 
 

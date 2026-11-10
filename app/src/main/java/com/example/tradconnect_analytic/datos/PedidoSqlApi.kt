@@ -20,7 +20,7 @@ data class DetallePedidoApi(
     @SerializedName("productoid") val productoId: Int? = null,
     @SerializedName("producto_nombre") val productoNombre: String? = null,
     val cantidad: String? = null,
-    // DetailSerializer expone el subtotal de la línea con la clave "subtotal".
+    // La API expone el subtotal de cada línea con la clave "subtotal".
     @SerializedName("subtotal") val subtotalLinea: String? = null
 )
 
@@ -28,7 +28,16 @@ data class ProductoCatalogoApi(
     val id: Int? = null,
     @SerializedName("empresa_id") val empresaId: String? = null,
     @SerializedName("nombreproducto") val nombre: String? = null,
-    @SerializedName("categoria_nombre") val categoria: String? = null
+    @SerializedName("categoria_nombre") val categoria: String? = null,
+    @SerializedName("unidadmedidaid") val unidadMedidaId: Int? = null,
+    @SerializedName("unidad_nombre") val unidadNombre: String? = null,
+    @SerializedName("imagenurl") val imagenUrl: String? = null
+)
+
+data class MonedaCatalogoApi(
+    val id: Int? = null,
+    @SerializedName("nombremoneda") val nombre: String? = null,
+    @SerializedName("simbolo") val simbolo: String? = null
 )
 
 data class MetodoPagoApi(

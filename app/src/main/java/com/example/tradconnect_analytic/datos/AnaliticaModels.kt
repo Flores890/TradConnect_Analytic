@@ -1,17 +1,5 @@
 package com.example.tradconnect_analytic.datos
 
-data class PuntoVenta(
-    val etiqueta: String,
-    val valor: Int
-)
-
-data class DatosPeriodoVentas(
-    val titulo: String,
-    val ventasTotalPeriodo: Int,
-    val estadoComparativo: String,
-    val puntosHistorial: List<PuntoVenta>
-)
-
 data class EvaluacionCliente(
     val id: String,
     val clienteNombre: String,
@@ -42,7 +30,3 @@ data class ComentarioPostCompra(
     val fechaRespuesta: String = ""
 )
 
-data class NecesidadNoSatisfecha(
-    val titulo: String,
-    val detalle: String
-)
