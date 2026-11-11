@@ -33,6 +33,7 @@ android {
     buildFeatures {
         compose = true
     }
+
 }
 
 dependencies {
@@ -51,4 +52,17 @@ dependencies {
     androidTestImplementation(libs.androidx.junit)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
+
+    // Retrofit: permite realizar peticiones HTTP
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+
+    // Gson: convierte las respuestas JSON en objetos Kotlin
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+
+    //Iconos
+    implementation("com.composables:icons-lucide-cmp:2.2.1")
+
+    // Imágenes remotas de productos entregadas por la API.
+    implementation("io.coil-kt.coil3:coil-compose:3.3.0")
+    implementation("io.coil-kt.coil3:coil-network-okhttp:3.3.0")
 }

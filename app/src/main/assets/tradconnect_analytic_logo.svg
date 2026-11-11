@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="160" viewBox="0 0 512 160" role="img" aria-labelledby="title desc">
+  <title id="title">TradConnect Analytic</title>
+  <desc id="desc">Gráfico ascendente conectado dentro de un cuadrado azul marino, acompañado por el nombre TradConnect Analytic.</desc>
+  <rect x="16" y="16" width="128" height="128" rx="30" fill="#0B1220"/>
+  <rect x="39" y="91" width="14" height="27" rx="7" fill="#35D6B0"/>
+  <rect x="65" y="76" width="14" height="42" rx="7" fill="#58DDBB"/>
+  <rect x="91" y="57" width="14" height="61" rx="7" fill="#86F0D8"/>
+  <path d="M34 83 L57 68 L76 73 L111 43" fill="none" stroke="#F9FBFD" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M98 43 L112 42 L111 56" fill="none" stroke="#F9FBFD" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="57" cy="68" r="4" fill="#F9FBFD"/>
+  <circle cx="76" cy="73" r="4" fill="#F9FBFD"/>
+  <text x="174" y="78" fill="#0B1220" font-family="Segoe UI, Arial, sans-serif" font-size="39" font-weight="700" letter-spacing="-1.2">Trad<tspan fill="#138F7A">Connect</tspan></text>
+  <text x="177" y="116" fill="#64748B" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="600" letter-spacing="6">ANALYTIC</text>
+</svg>
