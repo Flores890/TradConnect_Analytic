@@ -20,11 +20,7 @@ android {
     }
 
     buildTypes {
-        debug {
-            manifestPlaceholders["allowCleartextTraffic"] = "true"
-        }
         release {
-            manifestPlaceholders["allowCleartextTraffic"] = "false"
             optimization {
                 enable = false
             }

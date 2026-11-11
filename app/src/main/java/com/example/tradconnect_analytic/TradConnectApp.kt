@@ -253,7 +253,7 @@ fun TradConnectApp(
                         modifier = Modifier.padding(horizontal = 12.dp)
                     )
                     NavigationDrawerItem(
-                        label = { Text("TradConnect web · acceso temporal") },
+                        label = { Text("TradConnect web") },
                         selected = false,
                         onClick = {
                             coroutineScope.launch {
@@ -412,7 +412,7 @@ fun TradConnectApp(
 
 }
 
-private const val URL_POWER_BI = "https://app.powerbi.com/"
-private const val URL_SITIO_TRADCONNECT = URL_POWER_BI
+private const val URL_POWER_BI = "https://app.powerbi.com/links/QzI0LOC-Kg?ctid=e47646fe-da27-4518-8436-5f8b158ba127&pbi_source=linkShare"
+private const val URL_SITIO_TRADCONNECT = "https://nice-ground-0b9f3bd1e.3.azurestaticapps.net"
 
 

@@ -8,8 +8,7 @@ import java.net.URL
 
 /** Configura el cliente HTTP compartido y resuelve recursos publicados por la API. */
 object RetrofitClient {
-    // Para Azure cambia esta única URL por la dirección HTTPS publicada.
-    private const val BASE_URL = "http://10.39.239.249:8000/api/"
+    private const val BASE_URL = "http://10.207.95.249:8000/api/"
     internal val apiBaseUrl: String get() = BASE_URL
     private val serverRoot: String get() = BASE_URL.removeSuffix("api/")
 

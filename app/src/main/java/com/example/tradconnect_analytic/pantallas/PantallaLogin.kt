@@ -27,6 +27,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.gson.JsonParser
 import com.composables.icons.lucide.Eye
 import com.composables.icons.lucide.EyeOff
 import com.composables.icons.lucide.Lucide
@@ -36,10 +37,10 @@ import com.example.tradconnect_analytic.datos.TokenManager
 import kotlinx.coroutines.launch
 import java.util.Locale
 
-private val FondoInicio = Color(0xFF173D35)
-private val FondoFinal = Color(0xFFEAF1F1)
-private val VerdeAcento = Color(0xFF287F70)
-private val TextoSecundario = Color(0xFF53646C)
+private val FondoInicio = Color(0xFF0B1220)
+private val FondoFinal = Color(0xFF142B43)
+private val VerdeAcento = Color(0xFF35D6B0)
+private val TextoSecundario = Color(0xFF64748B)
 
 @Composable
 fun PantallaLogin(onLoginSuccess: () -> Unit) {
@@ -79,9 +80,20 @@ fun PantallaLogin(onLoginSuccess: () -> Unit) {
                 )
 
                 if (!response.isSuccessful) {
+                    val cuerpoError = response.errorBody()?.string().orEmpty()
+                    val detalleApi = runCatching {
+                        val json = JsonParser.parseString(cuerpoError).asJsonObject
+                        json.get("detail")?.takeIf { it.isJsonPrimitive }?.asString
+                    }.getOrNull()
+
                     errorMessage = when (response.code()) {
-                        401 -> "Usuario o contraseña incorrectos."
-                        else -> "No se pudo iniciar sesión. Código: ${response.code()}."
+                        401 -> detalleApi ?: "Usuario o contraseña incorrectos en la base de Azure."
+                        403 -> detalleApi ?: "La cuenta no tiene permiso para iniciar sesión."
+                        404 -> "La API de Azure no encontró la ruta de inicio de sesión (404)."
+                        in 500..599 -> detalleApi
+                            ?: "La API de Azure tuvo un error interno (${response.code()})."
+                        else -> detalleApi
+                            ?: "La API rechazó el inicio de sesión (${response.code()})."
                     }
                     return@launch
                 }
@@ -110,8 +122,13 @@ fun PantallaLogin(onLoginSuccess: () -> Unit) {
                     onLoginSuccess()
                  }
 
-            } catch (_: Exception) {
-                errorMessage = "No se pudo conectar. Comprueba la conexión e inténtalo de nuevo."
+            } catch (e: Exception) {
+                errorMessage = when (e) {
+                    is java.net.UnknownHostException -> "No se encuentra el dominio de la API de Azure."
+                    is java.net.SocketTimeoutException -> "La API de Azure tardó demasiado en responder."
+                    is java.io.IOException -> "No se pudo completar la conexión segura con la API de Azure."
+                    else -> "Error al procesar la respuesta de la API: ${e.localizedMessage ?: "respuesta inválida"}"
+                }
             } finally {
                 isLoading = false
             }
@@ -123,7 +140,7 @@ fun PantallaLogin(onLoginSuccess: () -> Unit) {
             .fillMaxSize()
             .background(
                 Brush.linearGradient(
-                    colors = listOf(Color(0xFFF4F6F7), Color(0xFFF9FAFA), FondoFinal)
+                    colors = listOf(FondoInicio, Color(0xFF102238), FondoFinal)
                 )
             )
     ) {
@@ -167,7 +184,7 @@ fun PantallaLogin(onLoginSuccess: () -> Unit) {
 
             Text(
                 text = "TradConnect Analytic",
-                color = Color(0xFF1D2529),
+                color = Color.White,
                 fontSize = 25.sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1
@@ -177,7 +194,7 @@ fun PantallaLogin(onLoginSuccess: () -> Unit) {
 
             Text(
                 text = "Tu comercio, en perspectiva.",
-                color = Color(0xFF53646C),
+                color = Color(0xFFB8C7D9),
                 style = MaterialTheme.typography.bodyLarge
             )
 

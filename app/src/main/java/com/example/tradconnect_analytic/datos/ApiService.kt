@@ -8,7 +8,7 @@ import retrofit2.http.POST
 import retrofit2.http.Query
 
 /** Define las rutas REST que consume la app móvil. */
-interface ApiService {
+interface  ApiService {
     @POST("auth/login/")
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
 

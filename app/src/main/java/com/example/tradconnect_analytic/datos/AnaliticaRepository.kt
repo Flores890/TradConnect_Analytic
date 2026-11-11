@@ -1,84 +1,102 @@
 package com.example.tradconnect_analytic.datos
 
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
+import retrofit2.Response
 
-/** Carga datos permitidos para la empresa asociada a la sesión del proveedor. */
+/** Carga datos limitados a la empresa asociada a la sesión del proveedor. */
 class AnaliticaRepository(private val api: ApiService) {
-    suspend fun cargarDatosProveedor(token: String, desde: String, hasta: String): DatosProveedorApi =
-        withContext(Dispatchers.IO) {
-            val auth = "Bearer " + token
 
-            // Este recurso devuelve solo la empresa asociada a la sesión; auth/my-data
-            // construye un snapshot SQL amplio que la app no utiliza.
-            val empresaResponse = api.obtenerEmpresaActual(auth)
-            if (!empresaResponse.isSuccessful) {
-                throw ApiRequestException(empresaResponse.code(), "No se pudo verificar la empresa del proveedor.")
+    suspend fun cargarDatosProveedor(
+        token: String,
+        desde: String,
+        hasta: String
+    ): DatosProveedorApi = withContext(Dispatchers.IO) {
+        coroutineScope {
+            val auth = "Bearer $token"
+
+            // Estas dos rutas son independientes: la analítica aplica el alcance del JWT.
+            val empresaDeferred = async { api.obtenerEmpresaActual(auth) }
+            val analiticaDeferred = async {
+                api.obtenerAnaliticaProveedor(auth, desde, hasta)
             }
+
+            // Las demás se consultan en paralelo para evitar sumar sus latencias.
+            val pedidosDeferred = async {
+                cargarRespuestaOpcional { api.obtenerPedidosProveedor(auth) }
+            }
+            val productosDeferred = async {
+                cargarRespuestaOpcional { api.obtenerProductosProveedor(auth) }
+            }
+            val metodosDeferred = async {
+                cargarRespuestaOpcional { api.obtenerCatalogoMetodosPago() }
+            }
+            val monedasDeferred = async {
+                cargarRespuestaOpcional { api.obtenerCatalogoMonedas() }
+            }
+            val evaluacionesDeferred = async {
+                cargarPaginasOpcional { offset ->
+                    api.obtenerEvaluacionesProveedor(auth, offset)
+                }
+            }
+            val comentariosDeferred = async {
+                cargarPaginasOpcional { offset ->
+                    api.obtenerComentariosProveedor(auth, offset)
+                }
+            }
+            val incidenciasDeferred = async {
+                cargarPaginasOpcional { offset ->
+                    api.obtenerIncidenciasProveedor(auth, offset)
+                }
+            }
+
+            val empresaResponse = empresaDeferred.await()
+            if (!empresaResponse.isSuccessful) {
+                throw ApiRequestException(
+                    empresaResponse.code(),
+                    "No se pudo verificar la empresa del proveedor."
+                )
+            }
+
             val empresa = empresaResponse.body()?.firstOrNull()
             val empresaId = empresa?.id?.takeIf { it.isNotBlank() }
                 ?: error("La sesión no tiene una empresa de proveedor verificable.")
 
-            // Esta ruta también valida en servidor que el token sea de un Proveedor.
-            val analiticaResponse = api.obtenerAnaliticaProveedor(auth, desde, hasta)
+            val analiticaResponse = analiticaDeferred.await()
             if (!analiticaResponse.isSuccessful) {
-                throw ApiRequestException(analiticaResponse.code(), "Analítica no disponible.")
+                throw ApiRequestException(
+                    analiticaResponse.code(),
+                    "Analítica no disponible."
+                )
             }
             val analitica = analiticaResponse.body()
                 ?: error("La API devolvió la analítica vacía.")
 
-            val pedidosResponse = try { api.obtenerPedidosProveedor(auth) }
-            catch (cancelled: CancellationException) { throw cancelled }
-            catch (error: Exception) { null }
-            val pedidosSqlDisponibles = pedidosResponse?.isSuccessful == true && pedidosResponse.body() != null
-            if (pedidosResponse?.code() == 401) throw ApiRequestException(401, "La sesión ya no está autorizada.")
-            val pedidos = if (pedidosSqlDisponibles) {
-                // Se excluyen únicamente pedidos cancelados; cualquier otro estado se contabiliza.
-                pedidosResponse?.body().orEmpty().filter { pedido ->
-                    val estado = pedido.estadoActual.orEmpty().trim()
-                    pedido.proveedorId == empresaId &&
-                        !estado.equals("Cancelado", ignoreCase = true) &&
-                        !estado.equals("Cancelada", ignoreCase = true)
-                }
-            } else emptyList()
-            val mensajePedidos = when {
-                pedidosResponse == null -> "No fue posible leer la respuesta de pedidos SQL."
-                !pedidosResponse.isSuccessful -> "La ruta de pedidos SQL respondió con código ${pedidosResponse.code()}."
-                pedidosResponse.body() == null -> "La ruta de pedidos SQL respondió sin contenido."
-                else -> ""
+            val pedidosCarga = pedidosDeferred.await()
+            val pedidosSqlDisponibles = pedidosCarga.datos != null
+            val pedidos = pedidosCarga.datos.orEmpty().filter { pedido ->
+                val estado = pedido.estadoActual.orEmpty().trim()
+                pedido.proveedorId == empresaId &&
+                    !estado.equals("Cancelado", ignoreCase = true) &&
+                    !estado.equals("Cancelada", ignoreCase = true)
             }
 
-            val productosResponse = try { api.obtenerProductosProveedor(auth) }
-            catch (cancelled: CancellationException) { throw cancelled }
-            catch (error: Exception) { null }
-            val productosSqlDisponibles = productosResponse?.isSuccessful == true && productosResponse.body() != null
-            if (productosResponse?.code() == 401) throw ApiRequestException(401, "La sesión ya no está autorizada.")
-            val productos = if (productosSqlDisponibles) {
-                productosResponse?.body().orEmpty().filter { it.empresaId == empresaId }
-            } else emptyList()
-            val mensajeProductos = when {
-                productosResponse == null -> "No fue posible leer la respuesta del catálogo SQL."
-                !productosResponse.isSuccessful -> "La ruta de productos respondió con código ${productosResponse.code()}."
-                productosResponse.body() == null -> "La ruta de productos respondió sin contenido."
-                else -> ""
-            }
+            val productosCarga = productosDeferred.await()
+            val productosSqlDisponibles = productosCarga.datos != null
+            val productos = productosCarga.datos.orEmpty()
+                .filter { it.empresaId == empresaId }
 
-            val metodosResponse = try { api.obtenerCatalogoMetodosPago() }
-            catch (cancelled: CancellationException) { throw cancelled }
-            catch (error: Exception) { null }
-            val metodosPago = metodosResponse?.takeIf { it.isSuccessful }?.body().orEmpty()
-
-            val monedasResponse = try { api.obtenerCatalogoMonedas() }
-            catch (cancelled: CancellationException) { throw cancelled }
-            catch (error: Exception) { null }
-            val monedas = monedasResponse?.takeIf { it.isSuccessful }?.body().orEmpty()
+            val metodosPago = metodosDeferred.await().datos.orEmpty()
+            val monedas = monedasDeferred.await().datos.orEmpty()
             val simboloMoneda = monedas.firstOrNull { it.id == analitica.monedaId }
                 ?.simbolo?.trim()?.takeIf { it.isNotEmpty() }
 
-            val evaluacionesCarga = cargarPaginasOpcional { offset -> api.obtenerEvaluacionesProveedor(auth, offset) }
-            val comentariosCarga = cargarPaginasOpcional { offset -> api.obtenerComentariosProveedor(auth, offset) }
-            val incidenciasCarga = cargarPaginasOpcional { offset -> api.obtenerIncidenciasProveedor(auth, offset) }
+            val evaluacionesCarga = evaluacionesDeferred.await()
+            val comentariosCarga = comentariosDeferred.await()
+            val incidenciasCarga = incidenciasDeferred.await()
 
             DatosProveedorApi(
                 empresaId = empresaId,
@@ -89,28 +107,67 @@ class AnaliticaRepository(private val api: ApiService) {
                 metodosPago = metodosPago,
                 simboloMoneda = simboloMoneda,
                 pedidosSqlDisponibles = pedidosSqlDisponibles,
-                mensajePedidos = mensajePedidos,
-                mensajeProductos = mensajeProductos,
-                evaluaciones = evaluacionesCarga.elementos.filter { it.proveedorEmpresaId == empresaId },
+                mensajePedidos = pedidosCarga.error,
+                mensajeProductos = productosCarga.error,
+                evaluaciones = evaluacionesCarga.elementos
+                    .filter { it.proveedorEmpresaId == empresaId },
                 mensajeEvaluaciones = evaluacionesCarga.error,
-                comentarios = comentariosCarga.elementos.filter { it.proveedorEmpresaId == empresaId },
+                comentarios = comentariosCarga.elementos
+                    .filter { it.proveedorEmpresaId == empresaId },
                 mensajeComentarios = comentariosCarga.error,
-                incidencias = incidenciasCarga.elementos.filter { it.proveedorEmpresaId == empresaId },
+                incidencias = incidenciasCarga.elementos
+                    .filter { it.proveedorEmpresaId == empresaId },
                 mensajeIncidencias = incidenciasCarga.error,
                 usuarioNombre = null,
                 empresaNombre = empresa.razonSocial?.takeIf { it.isNotBlank() }
             )
         }
+    }
+
+    private suspend fun <T> cargarRespuestaOpcional(
+        llamada: suspend () -> Response<T>
+    ): RespuestaOpcional<T> = try {
+        val respuesta = llamada()
+        if (respuesta.code() == 401) {
+            throw ApiRequestException(401, "La sesión ya no está autorizada.")
+        }
+        when {
+            !respuesta.isSuccessful -> RespuestaOpcional(
+                datos = null,
+                error = "La API respondió con código ${respuesta.code()}."
+            )
+            respuesta.body() == null -> RespuestaOpcional(
+                datos = null,
+                error = "La API respondió sin contenido."
+            )
+            else -> RespuestaOpcional(respuesta.body(), "")
+        }
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (error: ApiRequestException) {
+        throw error
+    } catch (error: Exception) {
+        RespuestaOpcional(
+            datos = null,
+            error = error.localizedMessage ?: "No fue posible leer esta sección."
+        )
+    }
 
     private suspend fun <T> cargarPaginas(
-        llamada: suspend (offset: Int) -> retrofit2.Response<PaginaApi<T>>
+        llamada: suspend (offset: Int) -> Response<PaginaApi<T>>
     ): List<T> {
         val acumulado = mutableListOf<T>()
         var offset = 0
         while (true) {
             val respuesta = llamada(offset)
-            if (!respuesta.isSuccessful) throw ApiRequestException(respuesta.code(), "No se pudo cargar la información.")
-            val pagina = respuesta.body() ?: error("La API devolvió una página vacía.")
+            if (!respuesta.isSuccessful) {
+                throw ApiRequestException(
+                    respuesta.code(),
+                    "No se pudo cargar la información."
+                )
+            }
+            val pagina = respuesta.body()
+                ?: error("La API devolvió una página vacía.")
             acumulado += pagina.results
             if (pagina.results.size < 50) break
             offset += pagina.results.size
@@ -120,17 +177,26 @@ class AnaliticaRepository(private val api: ApiService) {
     }
 
     private suspend fun <T> cargarPaginasOpcional(
-        llamada: suspend (offset: Int) -> retrofit2.Response<PaginaApi<T>>
+        llamada: suspend (offset: Int) -> Response<PaginaApi<T>>
     ): ResultadoCarga<T> = try {
         ResultadoCarga(cargarPaginas(llamada), "")
     } catch (cancelled: CancellationException) {
         throw cancelled
+    } catch (error: ApiRequestException) {
+        if (error.statusCode == 401) throw error
+        ResultadoCarga(emptyList(), error.message.orEmpty())
     } catch (error: Exception) {
-        if (error is ApiRequestException && error.statusCode == 401) throw error
-        ResultadoCarga(emptyList(), error.localizedMessage ?: "No fue posible cargar esta sección.")
+        ResultadoCarga(
+            emptyList(),
+            error.localizedMessage ?: "No fue posible cargar esta sección."
+        )
     }
-
 }
+
+private data class RespuestaOpcional<T>(
+    val datos: T?,
+    val error: String
+)
 
 data class DatosProveedorApi(
     val empresaId: String,
@@ -153,7 +219,12 @@ data class DatosProveedorApi(
     val empresaNombre: String? = null
 )
 
-private data class ResultadoCarga<T>(val elementos: List<T>, val error: String)
+private data class ResultadoCarga<T>(
+    val elementos: List<T>,
+    val error: String
+)
 
-class ApiRequestException(val statusCode: Int, message: String) : Exception("$message Código $statusCode.")
-
+class ApiRequestException(
+    val statusCode: Int,
+    message: String
+) : Exception("$message Código $statusCode.")
